@@ -1,56 +1,28 @@
+#!groovy
 pipeline {
     agent any
-
+    
     stages {
-        stage('Clone Repository') {
+        stage('Build') {
             steps {
-                git branch: 'main', url: 'https://github.com/Himosh/3967_Himosh.git'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
+                // Checkout your source code from version control system
                 script {
-                    docker.build("react-docker:tag")
+                    git branch: 'master', url: 'https://github.com/Himosh/3967_Himosh.git'
                 }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                script {
-                    // Run Docker container and capture the container ID
-                    def containerId = sh(script: "docker run -d -p 8083:8083 --name react-docker react-docker:tag", returnStdout: true).trim()
-                    // Store the container ID in an environment variable for later use
-                    env.CONTAINER_ID = containerId
-                }
-            }
-        }
-
-        stage('Showing Running Containers') {
-            steps {
-                sh 'docker ps'
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                // Verify deployment
-                sh 'curl http://localhost:8083' // Example: Use curl to check if the application is running
-            }
-        }
-    }
-
-    post {
-        always {
-            // Cleanup
-            script {
-                // Get the container ID from the environment variable
-                def containerId = env.CONTAINER_ID
                 
-                // Stop and remove the Docker container using the container ID
-                sh "docker stop $containerId"
-                sh "docker rm $containerId"
+                // Build the Docker image
+                script {
+                    docker.build('my-spring-app', '-f ./Dockerfile .')
+                }
+            }
+        }
+        
+        stage('Run') {
+            steps {
+                // Run the Docker container
+                script {
+                    docker.image('my-spring-app').run('-p 8081:8081')
+                }
             }
         }
     }
